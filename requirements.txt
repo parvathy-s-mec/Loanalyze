@@ -1,0 +1,30 @@
+# Core framework
+streamlit
+
+# Supabase Python client
+supabase
+
+# Environment variable management
+python-dotenv==1.0.1
+
+# Data processing
+pandas
+numpy
+
+# ML model (pickle support, etc.)
+scikit-learn
+
+# Plotting
+plotly
+
+# Streamlit extras
+streamlit-extras
+
+# PDF generation
+fpdf
+
+# If you use streamlit_javascript
+streamlit-javascript
+
+# Excel export support
+XlsxWriter
