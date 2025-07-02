@@ -2,6 +2,7 @@ import streamlit as st
 import numpy as np
 import pickle
 import os
+import requests
 from supabase import Client
 from dotenv import load_dotenv
 import pandas as pd
@@ -25,15 +26,36 @@ def app(supabase: Client):
     st.title(f"Applicant Dashboard — Welcome, {user.get('full_name', 'User')}")
     st.write("Fill in your loan application details:")
 
-    # Load model and encoders
+    # Load model and encoders — download if missing
     BASE_DIR = os.path.dirname(os.path.dirname(__file__))
-    with open(os.path.join(BASE_DIR, "model", "loan_model.pkl"), "rb") as f:
+    MODEL_DIR = os.path.join(BASE_DIR, "model")
+    os.makedirs(MODEL_DIR, exist_ok=True)
+
+    model_path = os.path.join(MODEL_DIR, "loan_model.pkl")
+    encoders_path = os.path.join(MODEL_DIR, "label_encoders.pkl")
+
+    if not os.path.exists(model_path):
+        st.info("Downloading model file...")
+        url = "https://drive.google.com/uc?export=download&id=1ctOxxtT_81C--OSyJS8XFuxT29CqbmBL"
+        r = requests.get(url)
+        with open(model_path, "wb") as f:
+            f.write(r.content)
+
+    if not os.path.exists(encoders_path):
+        st.info("Downloading encoders file...")
+        url = "https://drive.google.com/uc?export=download&id=1f3F0JbTBTm1tb2z4mqNBdHVbQL5dtTCH"
+        r = requests.get(url)
+        with open(encoders_path, "wb") as f:
+            f.write(r.content)
+
+    # Load files
+    with open(model_path, "rb") as f:
         model = pickle.load(f)
 
-    with open(os.path.join(BASE_DIR, "model", "label_encoders.pkl"), "rb") as f:
+    with open(encoders_path, "rb") as f:
         label_encoders = pickle.load(f)
 
-    # Fetch class options
+    # User input
     marital_status = st.selectbox("Marital Status", label_encoders["marital_status"].classes_)
     house_ownership = st.selectbox("House Ownership", label_encoders["House_Ownership"].classes_)
     car_ownership = st.selectbox("Car Ownership", label_encoders["Car_Ownership"].classes_)
@@ -50,12 +72,10 @@ def app(supabase: Client):
     loan_duration = st.slider("Loan Duration (months)", min_value=12, max_value=360, step=12)
     interest_rate = st.slider("Interest Rate (%)", min_value=5.0, max_value=20.0, step=0.1)
 
-    # Optional comment field for the applicant
     comments = st.text_area("Additional Comments (optional)")
 
     if st.button("Predict & Submit"):
         try:
-            # Encode values
             marital_status_enc = label_encoders["marital_status"].transform([marital_status])[0]
             house_ownership_enc = label_encoders["House_Ownership"].transform([house_ownership])[0]
             car_ownership_enc = label_encoders["Car_Ownership"].transform([car_ownership])[0]
@@ -82,7 +102,6 @@ def app(supabase: Client):
             st.success(f"Predicted Default Probability: {default_prob * 100:.2f}%")
             st.info(f"Risk Band: {risk_band}")
 
-            # Add optional feature importance placeholder if you wish
             feature_importance = {}
 
             insert_data = {
@@ -117,7 +136,6 @@ def app(supabase: Client):
             else:
                 st.success("Submission saved successfully!")
 
-                # Generate PDF summary
                 pdf = FPDF()
                 pdf.add_page()
                 pdf.set_font("Arial", size=12)
@@ -136,7 +154,6 @@ def app(supabase: Client):
         except Exception as e:
             st.error(f"Prediction failed: {e}")
 
-    # Submission History
     st.markdown("---")
     st.subheader("Submission History")
     try:
