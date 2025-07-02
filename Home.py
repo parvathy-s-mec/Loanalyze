@@ -80,4 +80,4 @@ def app(navigate):
             st.session_state.page = "register"
 
     st.markdown("---")
-    st.info("Contact support@loanalyze.com")
+    st.info("Contact loanalyzewebapp@gmail.com")
